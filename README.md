@@ -98,3 +98,217 @@ Presenter - презентер содержит основную логику п
 `emit<T extends object>(event: string, data?: T): void` - инициализация события. При вызове события в метод передается название события и объект с данными, который будет использован как аргумент для вызова обработчика.  
 `trigger<T extends object>(event: string, context?: Partial<T>): (data: T) => void` - возвращает функцию, при вызове которой инициализируется требуемое в параметрах событие с передачей в него данных из второго параметра.
 
+#### Данные
+
+На макете видно следующие данные:
+
+1) Товар:
+    - ID: string
+    - Название (title: string)
+    - Изображение (image: string)
+    - Группа (category: string)
+    - цена (price: number | null)
+    - Описание (description: string)
+
+
+    а) Товары на главной странице:
+    Хранить:
+      - Массив товаров
+      - Выбранная карточка
+
+    Действие:
+      - Список товаров
+      - Получить товар по ID
+      - Сохранить выбранную карточку
+      - Получить выбранную карточку
+      - Сохранить массив товаров
+      
+
+    б) Товары в корзине:
+
+    Хранить:
+      - Массив товаров
+
+    Действие:
+      - Добавить товар
+      - Удалить товар
+      - Количество товаров (не для хранения, просто вьюшка)
+      - Список товаров
+      - сумма стоимости товаров (не для хранения, просто вьюшка)
+      - возможность оформить заказ
+      - узнать наличие товара в корзине
+
+2) покупатель:
+
+    Хранить:
+      - Способ оплаты (два варианта) (payment: 'card' | 'cash' | '')
+      - Адрес доставки (address: string)
+      - Email (email: string)
+      - Телефон (phone: string)
+
+    Действие:
+      - проверка данных
+      - Получение данных
+      - Сохранение данных
+
+
+#### Типы
+
+type PaymentMethod = 'card' | 'cash' | '';
+
+#### Интерфейсы
+
+interface IProduct {
+  id: string;
+  description: string;
+  image: string;
+  title: string;
+  category: string;
+  price: number | null;
+}
+
+interface IBuyer {
+  payment: PaymentMethod;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+
+#### Классы:
+
+1) Товары на главной странице: 
+  Класс MainPageItems предназначен для вывода товаров на главной странице и получения карточки отдельно взятого товара:
+
+  Свойства:
+    - private products: IProduct[] - массив товаров
+    - private selectedCard: IProduct | null - выбранная карточка товара
+
+  constructor() {
+    this.products = [];
+    this.selectedCard = null;
+  }
+
+  Методы класса: 
+
+    - `getAllProducts(): IProduct[]` - получение массива всех товаров
+    - `getProduct(id: string): IProduct | null` - получение товара по ID
+    - `setAllProducts(products: IProduct[]): void` - установка массива товаров
+    - `setProductCard(product: IProduct): void` - установка выбранной карточки
+    - `getProductCard(): IProduct | null` - получение выбранной карточки
+
+2) Товары в корзине:
+  Класс CartItems предназначен для вывода товаров, содержащихся в корзине:
+
+  Свойства:
+    - private products: IProduct[] - массив товаров в корзине
+
+  constructor() {
+    this.products = [];
+  }
+
+  Методы класса: 
+
+    - `addProduct(product: IProduct): void` - добавление товара в корзину
+    - `removeProduct(product: IProduct): void` - удаление товара из корзины
+    - `getProductsInCart(): IProduct[]` - получение массива товаров в корзине
+    - `productIsInCart(id: string): boolean` - проверка наличия товара в корзине по ID
+    - `getProductCount(): number` - получение количества товаров в корзине
+    - `getTotalPrice(): number` - получение суммы стоимости товаров в корзине
+    - `placeAnOrder(): void` - оформление заказа (очистка корзины после успешного оформления)
+    - `clearCart(): void` - очистка корзины
+
+3) Покупатель:
+
+  Класс Buyer предназначен для хранения данных о покупателе:
+
+  Свойства:
+    - payment: PaymentMethod - способ оплаты ('card' | 'cash' | '')
+    - email: string - email покупателя
+    - phone: string - телефон покупателя
+    - address: string - адрес доставки
+    - private errors: ValidationError[] - массив ошибок валидации
+    - private isFirstStepValid: boolean - валидность первого шага
+    - private isSecondStepValid: boolean - валидность второго шага
+
+  constructor(config: IBuyer) {
+    this.payment = config.payment;
+    this.email = config.email;
+    this.phone = config.phone;
+    this.address = config.address;
+    this.errors = [];
+    this.isFirstStepValid = false;
+    this.isSecondStepValid = false;
+  }
+
+  Методы сохранения данных:
+    - `setPayment(payment: TPayment): void` - сохранение способа оплаты
+    - `setAddress(address: string): void` - сохранение адреса доставки
+    - `setEmail(email: string): void` - сохранение email
+    - `setPhone(phone: string): void` - сохранение телефона
+
+  Методы получения данных:
+    - `getBuyerAddress(): string` - получение адреса (с проверкой)
+    - `getBuyerPayment(): string` - получение способа оплаты (с проверкой)
+    - `getBuyerEmail(): string` - получение email (с проверкой)
+    - `getBuyerPhone(): string` - получение телефона (с проверкой)
+    - `getBuyerData(): IBuyer` - получение всех данных покупателя
+    - `getErrors(): ValidationError[]` - получение списка ошибок валидации
+
+  Методы проверки данных (Шаг 1 - адрес и оплата):
+    - `checkBuyerAddress(): void` - проверка наличия адреса. При отсутствии данных - ошибка и блокировка кнопки "Далее"
+    - `checkBuyerPayment(): void` - проверка выбора способа оплаты. При отсутствии данных - ошибка и блокировка кнопки "Далее"
+    - `validateFirstStep(): boolean` - проверка первого шага полностью
+
+  Методы проверки данных (Шаг 2 - контакты):
+    - `checkBuyerEmail(): void` - проверка email. Если не заполнен - проверяет телефон. Одно из полей обязательно
+    - `checkBuyerPhone(): void` - проверка телефона. Если не заполнен - проверяет email. Одно из полей обязательно
+    - `validateSecondStep(): boolean` - проверка второго шага полностью
+
+  Методы валидации и очистки:
+    - `validateAll(): boolean` - проверка всех данных перед оформлением заказа
+    - `clearBuyerData(): void` - очистка всех данных покупателя (после успешной оплаты)
+
+  Ошибки валидации:
+    - 'Не выбран способ оплаты' - если не выбран payment
+    - 'Не указан адрес доставки' - если не заполнен address
+    - 'Укажите email или номер телефона' - если не заполнены оба поля
+
+#### Слой коммуникации
+
+Класс `AppApi` предназначен для коммуникации с сервером «веб-ларёк».
+
+**Композиция:** принимает в конструкторе объект, реализующий интерфейс `IApi`
+
+Свойства:
+- `private api: IApi` — экземпляр базового API клиента
+
+constructor(api: IApi) {
+  this.api = api;
+}
+
+Методы класса:
+- `getProductList(): Promise<IProduct[]>` — GET-запрос на `/product/`, возвращает массив товаров
+- `createOrder(order: IOrderRequest): Promise<IOrderResponse>` — POST-запрос на `/order/`, отправляет данные заказа
+
+#### Типы для API
+
+interface IApiProductResponse {
+  items: IProduct[];
+  total: number;
+}
+
+interface IOrderRequest {
+  payment: PaymentMethod;
+  email: string;
+  phone: string;
+  address: string;
+  items: string[];
+  total: number;
+}
+
+interface IOrderResponse {
+  id: string;
+  total: number;
+}
+
