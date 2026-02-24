@@ -1,24 +1,23 @@
-import { IProduct } from "../../types";
+import { IProduct } from '../../types';
 
+/**
+ * Класс для управления каталогом товаров на главной странице
+ * Хранит массив всех товаров и выбранную карточку товара
+ */
 export class MainPageItems {
+  // Приватное поле для хранения массива товаров
   private products: IProduct[] = [];
-  private selectedProductCard: IProduct | null = null;
-
-  constructor () {
-    this.products = [];
-    this.selectedProductCard = null;
-  }
-
-    /**
-   * Получение массива всех товаров
-   * @returns массив товаров
-   */
-  getAllProducts(): IProduct[] {
-    return this.products;
-  }
+  
+  // Приватное поле для хранения выбранной карточки товара
+  private selectedCard: IProduct | null = null;
 
   /**
-   * Установка массива товаров
+   * Конструктор не принимает параметров, инициализирует поля начальными (пустыми) данными
+   */
+  constructor() {}
+
+  /**
+   * Сохраняет массив товаров в модель
    * @param products - массив товаров для сохранения
    */
   setAllProducts(products: IProduct[]): void {
@@ -26,27 +25,35 @@ export class MainPageItems {
   }
 
   /**
-   * Получение товара по ID
-   * @param id - идентификатор товара
-   * @returns найденный товар или null
+   * Возвращает массив всех товаров
+   * @returns копия массива товаров
    */
-  getProduct(id: string): IProduct | null {
-    return this.products.find(product => product.id === id) || null;
+  getAllProducts(): IProduct[] {
+    return this.products;
   }
 
   /**
-   * Установка выбранной карточки товара
-   * @param product - товар для установки как выбранный
+   * Ищет товар по ID в сохраненном массиве
+   * @param id - идентификатор товара
+   * @returns найденный товар или undefined
+   */
+  getProduct(id: string): IProduct | undefined {
+    return this.products.find(product => product.id === id);
+  }
+
+  /**
+   * Сохраняет выбранную карточку товара
+   * @param product - товар для сохранения как выбранный
    */
   setProductCard(product: IProduct): void {
-    this.selectedProductCard = product;
+    this.selectedCard = product;
   }
 
   /**
-   * Получение выбранной карточки товара
+   * Возвращает сохраненную выбранную карточку товара
    * @returns выбранный товар или null
    */
   getProductCard(): IProduct | null {
-    return this.selectedProductCard;
+    return this.selectedCard;
   }
 }

@@ -18,12 +18,19 @@ export interface IProduct {
 }
 
 // Типы для способа оплаты
-export type PaymentMethod = 'card' | 'cash' | '';
+export type TPayment = 'card' | 'cash' | '';
+
+export type ValidationErrors = {
+  payment?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+};
 
 // Интерфейс для покупателя
 
 export interface IBuyer {
-    payment: PaymentMethod;
+    payment: TPayment;
     email: string;
     phone: string;
     address: string;
@@ -37,7 +44,7 @@ export interface IApiProductResponse {
 
 // Тип для отправки заказа (сверьтесь с Postman!)
 export interface IOrderRequest {
-  payment: PaymentMethod;
+  payment: TPayment;
   email: string;
   phone: string;
   address: string;

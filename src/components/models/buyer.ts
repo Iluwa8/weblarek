@@ -1,318 +1,241 @@
 // Типы для способа оплаты
-type PaymentMethod = 'card' | 'cash' | '';
+import { TPayment } from "../../types";
+import { ValidationErrors } from "../../types";
 
-// Интерфейс для конфигурации покупателя
-interface IBuyer {
-  payment: PaymentMethod;
-  email: string;
-  phone: string;
-  address: string;
-}
-
-// Тип для ошибок валидации
-type ValidationError = {
-  field: string;
-  message: string;
-};
-
+/**
+ * Класс для хранения данных покупателя
+ * Все поля приватные, нет привязки к шагам оформления
+ */
 export class Buyer {
-  // Хранимые данные
-  payment: PaymentMethod;
-  email: string;
-  phone: string;
-  address: string;
-
-  // Состояние валидации (для управления кнопками)
-  private errors: ValidationError[] = [];
-  private isFirstStepValid: boolean = false;
-  private isSecondStepValid: boolean = false;
-
-  constructor(config: IBuyer) {
-    this.payment = config.payment;
-    this.email = config.email;
-    this.phone = config.phone;
-    this.address = config.address;
-  }
-
-  // ==================== СОХРАНЕНИЕ ДАННЫХ ====================
+  private payment: TPayment = '';
+  private email: string = '';
+  private phone: string = '';
+  private address: string = '';
 
   /**
-   * Сохранение способа оплаты
+   * Конструктор не принимает параметров, инициализирует поля начальными (пустыми) данными
    */
-  setPayment(payment: PaymentMethod): void {
+  constructor() {}
+
+  // ==================== СЕТТЕРЫ ====================
+
+  setPayment(payment: TPayment): void {
     this.payment = payment;
   }
 
-  /**
-   * Сохранение адреса доставки
-   */
-  setAddress(address: string): void {
-    this.address = address;
-  }
-
-  /**
-   * Сохранение email
-   */
   setEmail(email: string): void {
     this.email = email;
   }
 
-  /**
-   * Сохранение телефона
-   */
   setPhone(phone: string): void {
     this.phone = phone;
   }
 
-  // ==================== ПОЛУЧЕНИЕ ДАННЫХ ====================
-
-  /**
-   * Получение адреса доставки
-   * Проверяет наличие данных (обязательное поле)
-   */
-  getBuyerAddress(): string {
-    this.checkBuyerAddress();
-    return this.address;
+  setAddress(address: string): void {
+    this.address = address;
   }
 
-  /**
-   * Получение способа оплаты
-   * Проверяет наличие данных (обязательное поле)
-   */
-  getBuyerPayment(): string {
-    this.checkBuyerPayment();
+  // ==================== ГЕТТЕРЫ ====================
+
+  getPayment(): TPayment {
     return this.payment;
   }
 
-  /**
-   * Получение email
-   * Проверяет наличие данных (обязательно одно из: email или phone)
-   */
-  getBuyerEmail(): string {
-    this.checkBuyerEmail();
+  getEmail(): string {
     return this.email;
   }
 
-  /**
-   * Получение телефона
-   * Проверяет наличие данных (обязательно одно из: email или phone)
-   */
-  getBuyerPhone(): string {
-    this.checkBuyerPhone();
+  getPhone(): string {
     return this.phone;
   }
 
-  // ==================== ПРОВЕРКА ДАННЫХ (ШАГ 1) ====================
+  getAddress(): string {
+    return this.address;
+  }
+
+  // ==================== ВАЛИДАЦИЯ ====================
 
   /**
-   * Проверка наличия адреса доставки
-   * Если данных нет — выводит ошибку и блокирует кнопку
+   * Валидирует все поля и возвращает объект с ошибками
+   * @returns объект с ошибками (пустой объект если ошибок нет)
    */
-  checkBuyerAddress(): void {
-    this.clearError('address');
-    
-    if (!this.address || this.address.trim() === '') {
-      this.addError('address', 'Не указан адрес доставки');
-      this.isFirstStepValid = false;
-      this.disableContinueButton();
-      throw new Error('Не указан адрес доставки');
+  validate(): ValidationErrors {
+    const errors: ValidationErrors = {};
+
+    if (!this.payment) {
+      errors.payment = 'Не выбран способ оплаты';
     }
-    
-    this.updateFirstStepValidation();
-  }
 
-  /**
-   * Проверка выбора способа оплаты
-   * Если данных нет — выводит ошибку и блокирует кнопку
-   */
-  checkBuyerPayment(): void {
-    this.clearError('payment');
-    
-    // Исправление ошибки 2367: проверяем длину строки вместо сравнения с ''
-    if (!this.payment || this.payment.length === 0) {
-      this.addError('payment', 'Не выбран способ оплаты');
-      this.isFirstStepValid = false;
-      this.disableContinueButton();
-      throw new Error('Не выбран способ оплаты');
+    if (!this.address.trim()) {
+      errors.address = 'Не указан адрес доставки';
     }
-    
-    // Проверка корректности значения
-    if (this.payment !== 'card' && this.payment !== 'cash') {
-      this.addError('payment', 'Некорректный способ оплаты');
-      this.isFirstStepValid = false;
-      this.disableContinueButton();
-      throw new Error('Некорректный способ оплаты');
+
+    if (!this.email.trim() && !this.phone.trim()) {
+      errors.email = 'Укажите email';
+      errors.phone = 'Укажите телефон';
     }
-    
-    this.updateFirstStepValidation();
+
+    return errors;
   }
 
   /**
-   * Проверка первого шага полностью
-   * Вызывается перед нажатием "Далее"
+   * Проверяет, валидны ли данные (нет ли ошибок)
+   * @returns true если данные валидны, false если есть ошибки
    */
-  validateFirstStep(): boolean {
-    try {
-      this.checkBuyerAddress();
-      this.checkBuyerPayment();
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  // ==================== ПРОВЕРКА ДАННЫХ (ШАГ 2) ====================
-
-  /**
-   * Проверка email
-   * Если email не заполнен — проверяет наличие телефона
-   * Одно из полей (email или phone) должно быть заполнено обязательно
-   */
-  checkBuyerEmail(): void {
-    this.clearError('email');
-    
-    const hasEmail = !!this.email && this.email.trim() !== '';
-    const hasPhone = !!this.phone && this.phone.trim() !== '';
-    
-    if (!hasEmail && !hasPhone) {
-      this.addError('email', 'Укажите email или номер телефона');
-      this.addError('phone', 'Укажите email или номер телефона');
-      this.isSecondStepValid = false;
-      this.disablePayButton();
-      throw new Error('Укажите email или номер телефона');
-    }
-    
-    this.updateSecondStepValidation();
+  isValid(): boolean {
+    return Object.keys(this.validate()).length === 0;
   }
 
   /**
-   * Проверка телефона
-   * Если телефон не заполнен — проверяет наличие email
-   * Одно из полей (email или phone) должно быть заполнено обязательно
+   * Очищает все данные покупателя
    */
-  checkBuyerPhone(): void {
-    this.clearError('phone');
-    
-    const hasEmail = !!this.email && this.email.trim() !== '';
-    const hasPhone = !!this.phone && this.phone.trim() !== '';
-    
-    if (!hasPhone && !hasEmail) {
-      this.addError('phone', 'Укажите номер телефона или email');
-      this.addError('email', 'Укажите номер телефона или email');
-      this.isSecondStepValid = false;
-      this.disablePayButton();
-      throw new Error('Укажите номер телефона или email');
-    }
-    
-    this.updateSecondStepValidation();
-  }
-
-  /**
-   * Проверка второго шага полностью
-   * Вызывается перед нажатием "Оплатить"
-   */
-  validateSecondStep(): boolean {
-    try {
-      this.checkBuyerEmail();
-      this.checkBuyerPhone();
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  // ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
-
-  /**
-   * Проверка всех данных перед оформлением заказа
-   */
-  validateAll(): boolean {
-    return this.validateFirstStep() && this.validateSecondStep();
-  }
-
-  /**
-   * Получение списка ошибок
-   */
-  getErrors(): ValidationError[] {
-    return this.errors;
-  }
-
-  /**
-   * Очистка всех данных покупателя
-   * Вызывается после успешной оплаты
-   */
-  clearBuyerData(): void {
+  clearData(): void {
     this.payment = '';
     this.email = '';
     this.phone = '';
     this.address = '';
-    this.errors = [];
-    this.isFirstStepValid = false;
-    this.isSecondStepValid = false;
-  }
-
-  /**
-   * Получение всех данных покупателя
-   */
-  getBuyerData(): IBuyer {
-    return {
-      payment: this.payment,
-      email: this.email,
-      phone: this.phone,
-      address: this.address
-    };
-  }
-
-  // ==================== ПРИВАТНЫЕ МЕТОДЫ ====================
-
-  private addError(field: string, message: string): void {
-    this.errors.push({ field, message });
-    console.error(`Ошибка валидации [${field}]: ${message}`);
-  }
-
-  private clearError(field: string): void {
-    this.errors = this.errors.filter(e => e.field !== field);
-  }
-
-  private updateFirstStepValidation(): void {
-    // Исправление ошибки 2322: явное приведение к boolean через !!
-    const hasAddress: boolean = !!this.address && this.address.trim() !== '';
-    const hasPayment: boolean = (this.payment === 'card' || this.payment === 'cash');
-    
-    this.isFirstStepValid = hasAddress && hasPayment;
-    
-    if (this.isFirstStepValid) {
-      this.enableContinueButton();
-    }
-  }
-
-  private updateSecondStepValidation(): void {
-    // Исправление ошибки 2322: явное приведение к boolean
-    const hasEmail: boolean = !!this.email && this.email.trim() !== '';
-    const hasPhone: boolean = !!this.phone && this.phone.trim() !== '';
-    
-    // Одно из полей должно быть заполнено
-    this.isSecondStepValid = hasEmail || hasPhone;
-    
-    if (this.isSecondStepValid) {
-      this.enablePayButton();
-    }
-  }
-
-  private disableContinueButton(): void {
-    // Логика блокировки кнопки "Далее"
-    console.log('Кнопка "Далее" заблокирована');
-  }
-
-  private enableContinueButton(): void {
-    console.log('Кнопка "Далее" активна');
-  }
-
-  private disablePayButton(): void {
-    console.log('Кнопка "Оплатить" заблокирована');
-  }
-
-  private enablePayButton(): void {
-    console.log('Кнопка "Оплатить" активна');
   }
 }
+
+
+
+// import { TPayment } from '../../types';
+
+// // Тип для объекта ошибок валидации
+// type ValidationErrors = {
+//   payment?: string;
+//   email?: string;
+//   phone?: string;
+//   address?: string;
+// };
+
+// /**
+//  * Класс для хранения данных покупателя с валидацией в сеттерах
+//  * Все поля приватные, нет привязки к шагам оформления
+//  */
+// export class Buyer {
+//   private payment: TPayment = '';
+//   private email: string = '';
+//   private phone: string = '';
+//   private address: string = '';
+  
+//   // Приватное поле для хранения ошибок каждого поля
+//   private errors: ValidationErrors = {};
+
+//   /**
+//    * Конструктор не принимает параметров, инициализирует поля начальными (пустыми) данными
+//    */
+//   constructor() {}
+
+//   // ==================== СЕТТЕРЫ С ВАЛИДАЦИЕЙ ====================
+
+//   setPayment(payment: TPayment): void {
+//     this.payment = payment;
+//     // Валидация только этого поля
+//     if (!payment) {
+//       this.errors.payment = 'Не выбран способ оплаты';
+//     } else {
+//       delete this.errors.payment;
+//     }
+//   }
+
+//   setEmail(email: string): void {
+//     this.email = email;
+//     // Валидация только этого поля
+//     this.validateContacts();
+//   }
+
+//   setPhone(phone: string): void {
+//     this.phone = phone;
+//     // Валидация только этого поля
+//     this.validateContacts();
+//   }
+
+//   setAddress(address: string): void {
+//     this.address = address;
+//     // Валидация только этого поля
+//     if (!address.trim()) {
+//       this.errors.address = 'Не указан адрес доставки';
+//     } else {
+//       delete this.errors.address;
+//     }
+//   }
+
+//   // ==================== ГЕТТЕРЫ ====================
+
+//   getPayment(): TPayment {
+//     return this.payment;
+//   }
+
+//   getEmail(): string {
+//     return this.email;
+//   }
+
+//   getPhone(): string {
+//     return this.phone;
+//   }
+
+//   getAddress(): string {
+//     return this.address;
+//   }
+
+//   // ==================== ВАЛИДАЦИЯ ====================
+
+//   /**
+//    * Приватный метод для валидации контактов (email или телефон)
+//    * Вызывается из сеттеров email и phone
+//    */
+//   private validateContacts(): void {
+//     if (!this.email.trim() && !this.phone.trim()) {
+//       this.errors.email = 'Укажите email';
+//       this.errors.phone = 'Укажите телефон';
+//     } else {
+//       delete this.errors.email;
+//       delete this.errors.phone;
+//     }
+//   }
+
+//   /**
+//    * Возвращает текущие ошибки валидации
+//    * @returns объект с ошибками
+//    */
+//   getErrors(): ValidationErrors {
+//     return { ...this.errors };
+//   }
+
+//   /**
+//    * Проверяет валидацию конкретных полей
+//    * @param fields - массив имен полей для проверки
+//    * @returns массив ошибок для указанных полей
+//    */
+//   checkValidation(fields: (keyof ValidationErrors)[]): string[] {
+//     const fieldErrors: string[] = [];
+    
+//     fields.forEach(field => {
+//       if (this.errors[field]) {
+//         fieldErrors.push(this.errors[field]!);
+//       }
+//     });
+    
+//     return fieldErrors;
+//   }
+
+//   /**
+//    * Проверяет, валидны ли данные (нет ли ошибок)
+//    * @returns true если данные валидны, false если есть ошибки
+//    */
+//   isValid(): boolean {
+//     return Object.keys(this.errors).length === 0;
+//   }
+
+//   /**
+//    * Очищает все данные покупателя и ошибки
+//    */
+//   clearData(): void {
+//     this.payment = '';
+//     this.email = '';
+//     this.phone = '';
+//     this.address = '';
+//     this.errors = {};
+//   }
+// }

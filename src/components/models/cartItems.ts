@@ -1,58 +1,65 @@
-import { IProduct } from "../../types";
+import { IProduct } from '../../types';
 
+/**
+ * Класс для управления корзиной покупок
+ * Хранит массив товаров, добавленных в корзину
+ */
 export class CartItems {
-  // Приватное свойство — массив товаров в корзине
+  // Приватное поле для хранения товаров в корзине
   private products: IProduct[] = [];
 
-  constructor () {}
+  /**
+   * Конструктор не принимает параметров, инициализирует поля начальными (пустыми) данными
+   */
+  constructor() {}
 
   /**
-   * Добавление товара в корзину
+   * Добавляет товар в корзину
+   * Проверяет, что товар еще не добавлен (по ID)
    * @param product - товар для добавления
    */
   addProduct(product: IProduct): void {
-    // Проверяем, нет ли уже такого товара в корзине
     if (!this.productIsInCart(product.id)) {
       this.products.push(product);
     }
   }
 
   /**
-   * Удаление товара из корзины
-   * @param product - товар для удаления (достаточно ID)
+   * Удаляет товар из корзины по ID
+   * @param productId - идентификатор товара для удаления
    */
-  removeProduct(product: IProduct): void {
-    this.products = this.products.filter(p => p.id !== product.id);
+  removeProduct(productId: string): void {
+    this.products = this.products.filter(product => product.id !== productId);
   }
 
   /**
-   * Получение списка товаров в корзине
-   * @returns массив товаров
+   * Возвращает массив товаров в корзине
+   * @returns копия массива товаров
    */
-  getProductsInCart(): IProduct[] {
+  getProducts(): IProduct[] {
     return this.products;
   }
 
   /**
-   * Проверка наличия товара в корзине
-   * @param id - идентификатор товара
-   * @returns true если товар в корзине, иначе false
+   * Проверяет, находится ли товар в корзине
+   * @param productId - идентификатор товара
+   * @returns true если товар в корзине, false если нет
    */
-  productIsInCart(id: string): boolean {
-    return this.products.some(product => product.id === id);
+  productIsInCart(productId: string): boolean {
+    return this.products.some(product => product.id === productId);
   }
 
   /**
-   * Получение количества товаров (вычисляемое значение, не хранится)
-   * @returns количество товаров в корзине
+   * Возвращает количество товаров в корзине
+   * @returns число товаров
    */
   getProductCount(): number {
     return this.products.length;
   }
 
   /**
-   * Получение суммы стоимости товаров (вычисляемое значение, не хранится)
-   * @returns общая сумма
+   * Вычисляет общую стоимость товаров в корзине
+   * @returns сумма цен всех товаров (товары без цены считаются как 0)
    */
   getTotalPrice(): number {
     return this.products.reduce((total, product) => {
@@ -61,28 +68,7 @@ export class CartItems {
   }
 
   /**
-   * Оформление заказа
-   * Очищает корзину после успешного оформления
-   */
-  placeAnOrder(): void {
-    if (this.products.length === 0) {
-      console.warn('Корзина пуста. Невозможно оформить заказ.');
-      return;
-    }
-
-    // Логика оформления заказа
-    console.log('Заказ оформлен:', {
-      items: this.products,
-      totalCount: this.getProductCount(),
-      totalPrice: this.getTotalPrice()
-    });
-
-    // Очистка корзины
-    this.clearCart();
-  }
-
-  /**
-   * Очистка корзины (вспомогательный метод)
+   * Очищает корзину (удаляет все товары)
    */
   clearCart(): void {
     this.products = [];
